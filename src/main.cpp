@@ -10,12 +10,10 @@
 #define LED_G A3
 #define BUZZER A0
 
-double distance = 0;
-
 Sonic sonic(ECHO, TRIG);
 
-void update(void *pvParameters);
-void updateLED();
+void printMessage(void *pvParameters);
+void updateLED(void *pvParameters);
 void updateBuzzer(void *pvParameters);
 
 void setup()
@@ -35,9 +33,11 @@ void setup()
 
   // initialize serial
   Serial.begin(115200);
+  sonic.start();
   // setup tasks
-  xTaskCreate(update, "update", 128, NULL, 1, NULL);
+  xTaskCreate(printMessage, "update", 128, NULL, 1, NULL);
   xTaskCreate(updateBuzzer, "updateBuzzer", 128, NULL, 1, NULL);
+  xTaskCreate(updateLED, "updateLED", 128, NULL, 1, NULL);
   // start scheduler
   vTaskStartScheduler();
 }
@@ -47,24 +47,24 @@ void loop()
 }
 
 // read distance and update LED (task)
-void update(void *pvParameters)
+void printMessage(void *pvParameters)
 {
   (void)pvParameters;
   while (1)
   {
-    distance = sonic.cm();
-    Serial.println(String(distance) + " cm");
-    updateLED();
-    vTaskDelay(5);
+    Serial.println(String(sonic.cm()) + " cm");
+    vTaskDelay(30);
   }
 }
 
 // update buzzer based on distance (task)
 void updateBuzzer(void *pvParameters)
 {
+  double distance = sonic.cm();
   (void)pvParameters;
   while (1)
   {
+    distance = sonic.cm();
     if (distance < 20)
     {
       digitalWrite(BUZZER, HIGH);
@@ -84,21 +84,27 @@ void updateBuzzer(void *pvParameters)
 }
 
 // update LED based on distance
-void updateLED()
+void updateLED(void *pvParameters)
 {
-  if (distance < 20)
+  (void)pvParameters;
+  while(1)
   {
-    digitalWrite(LED_R, HIGH);
-    digitalWrite(LED_G, LOW);
-  }
-  else if (distance < 50)
-  {
-    digitalWrite(LED_R, LOW);
-    digitalWrite(LED_G, HIGH);
-  }
-  else
-  {
-    digitalWrite(LED_R, LOW);
-    digitalWrite(LED_G, LOW);
+    double distance = sonic.cm();
+    if (distance < 20)
+    {
+      digitalWrite(LED_R, HIGH);
+      digitalWrite(LED_G, LOW);
+    }
+    else if (distance < 50)
+    {
+      digitalWrite(LED_R, LOW);
+      digitalWrite(LED_G, HIGH);
+    }
+    else
+    {
+      digitalWrite(LED_R, LOW);
+      digitalWrite(LED_G, LOW);
+    }
+    vTaskDelay(5);
   }
 }
