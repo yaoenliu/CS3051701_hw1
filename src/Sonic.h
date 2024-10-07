@@ -47,7 +47,6 @@ public:
         digitalWrite(trigPin, HIGH);
         delayMicroseconds(10);
         digitalWrite(trigPin, LOW);
-        pinMode(echoPin, INPUT);
         rawData = pulseIn(echoPin, HIGH);
     }
     double cm()
