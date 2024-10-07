@@ -1,13 +1,14 @@
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
+// a rtos tick is 16ms
 #include "Sonic.h"
 
 #define ECHO 12
 #define TRIG 13
 
-#define LED_R 2
-#define LED_G 3
-#define BUZZER 4
+#define LED_R A5
+#define LED_G A3
+#define BUZZER A0
 
 double distance = 0;
 
@@ -19,18 +20,21 @@ void updateBuzzer(void *pvParameters);
 
 void setup()
 {
-  // pin 11 is used to power the sensor
+  // Set some digital pins as power supply or ground
   pinMode(11, OUTPUT);
   digitalWrite(11, HIGH);
+  pinMode(A2, OUTPUT);
+  digitalWrite(A2, LOW);
+  pinMode(A4, OUTPUT);
+  digitalWrite(A4, LOW);
 
-  // initialize other pins
+  // initialize output pins
   pinMode(LED_R, OUTPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
   // initialize serial
-  Serial.begin(9600);
-
+  Serial.begin(115200);
   // setup tasks
   xTaskCreate(update, "update", 128, NULL, 1, NULL);
   xTaskCreate(updateBuzzer, "updateBuzzer", 128, NULL, 1, NULL);
@@ -40,7 +44,6 @@ void setup()
 
 void loop()
 {
-
 }
 
 // read distance and update LED (task)
@@ -50,10 +53,9 @@ void update(void *pvParameters)
   while (1)
   {
     distance = sonic.cm();
-    Serial.print(distance);
-    Serial.println(" cm");
+    Serial.println(String(distance) + " cm");
     updateLED();
-    vTaskDelay(20);
+    vTaskDelay(5);
   }
 }
 
